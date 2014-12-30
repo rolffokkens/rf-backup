@@ -1,0 +1,6 @@
+[Unit]
+Description=RF backup service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/share/rf-backup/do-backup.sh
