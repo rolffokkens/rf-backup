@@ -3,7 +3,7 @@
 CFG=/etc/rf-backup.conf
 MNTDIR=/mnt/backup
 EXCLUDEFILE=/tmp/rsync-backup-exclude-$$.lis
-LOGFILE=/var/log/rf-backup
+LOGFILE=/var/log/rf-backup.log
 
 [ -e "${CFG}" ] || exit 0
 
@@ -166,8 +166,6 @@ make_backup ()
           "$SRCPATH" "$DSTPATH/${NEXTID}"
     rm ""$EXCLUDEFILE""
 
-    notify-users "RF backup" "De backup is afgerond op disk ${BCKLABEL}..." critical
-
     return 0
 }
 
@@ -191,7 +189,7 @@ fi
 
 if umount "${MNTDIR}"
 then
-    notify-users "RF backup" "De backup is succesvol afgrond" critical
+    notify-users "RF backup" "De backup is afgerond op disk ${BCKLABEL}..." critical
 else
     write-log "ERROR: Error unmounting ${MNTDIR}"
     notify-users "RF backup" "Er is een fout opgetreden bij het afsluiten van de backup" critical
