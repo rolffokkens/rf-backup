@@ -6,6 +6,6 @@ PATH=`dirname $0`:$PATH
 
 CFGS=`match-label "$1"`
 
-check-cfg-single "$CFGS" "$1" && echo OK
+check-cfg-single "$1" "$CFGS" && echo OK
 
 exit 0

@@ -164,7 +164,7 @@ make_backup ()
 
 CFGS=`match-label "$BCKLABEL"`
 
-check-cfg-single "$CFGS" "$1" || exit 0
+check-cfg-single "$1" "$CFGS" || exit 0
 
 read-cfg "$CFGS"
 
