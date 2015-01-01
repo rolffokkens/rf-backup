@@ -1,20 +1,11 @@
 #!/bin/bash
 
-TLABEL="$1"
+PATH=`dirname $0`:$PATH
 
-[ -z "$TLABEL"           ] && exit 0
-[ -e /etc/rf-backup.conf ] || exit 0
+. rf-backup.lib.sh
 
-eval $(sed -n 's/\(^[^#].*$\)/cfg_\1/p' /etc/rf-backup.conf)
+CFGS=`match-label "$1"`
 
-IFS=,
-for i in $cfg_BACKUPLABELS
-do
-    if [ "$i" == "$TLABEL" ]
-    then
-        echo OK
-        exit 0
-    fi
-done
+check-cfg-single "$CFGS" "$1" && echo OK
 
 exit 0

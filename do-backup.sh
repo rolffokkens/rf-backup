@@ -1,18 +1,11 @@
 #!/bin/bash
 
-CFG=/etc/rf-backup.conf
-MNTDIR=/mnt/backup
-EXCLUDEFILE=/tmp/rsync-backup-exclude-$$.lis
-LOGFILE=/var/log/rf-backup.log
+PATH=`dirname $0`:$PATH
 
-[ -e "${CFG}" ] || exit 0
+. rf-backup.lib.sh
 
-eval $(sed -n 's/\(^[^#].*$\)/cfg_\1/p' "${CFG}")
-
-write-log ()
-{
-    echo "$1" | awk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0; }' >> ${LOGFILE}
-}
+BCKIMG=/usr/share/icons/gnome/32x32/devices/drive-harddisk-usb.png
+BCKLABEL="$1"
 
 notify-users ()
 {
@@ -28,7 +21,7 @@ notify-users ()
     | awk '{ if ($2 ~ "^[:]") print $1, $2; }' \
     | while read USER DISP
       do
-          su - "$USER" -c "DISPLAY=$DISP /bin/notify-send -i /usr/share/icons/gnome/32x32/devices/drive-harddisk-usb.png \"${TITLE}\" \"${MSG}\" -u ${URG}"
+          su - "$USER" -c "DISPLAY=$DISP /bin/notify-send -i \"${BCKIMG}\" \"${TITLE}\" \"${MSG}\" -u ${URG}"
       done
 
     /bin/wall "$MSG" > /dev/null 2>&1
@@ -169,11 +162,17 @@ make_backup ()
     return 0
 }
 
-BCKLABEL=`find-backupdisk`
+CFGS=`match-label "$BCKLABEL"`
 
-[ "$?" == "0" ] || exit 0
+check-cfg-single "$CFGS" "$1" || exit 0
 
-if ! cond-mount "${BCKLABEL}" "${MNTDIR}"
+read-cfg "$CFGS"
+
+MNTBCKDIR="${MNTDIR}/`basename "$CFGS"`"
+
+mkdir -p "${MNTBCKDIR}"
+
+if ! cond-mount "${BCKLABEL}" "${MNTBCKDIR}"
 then
     notify-users "RF backup" "Er is een fout opgetreden bij het starten van de backup" critical
     exit 0
@@ -181,17 +180,17 @@ fi
 
 NEXTID=`echo 1 | awk '{ print strftime ("%Y%m%d.%H%M%S")}'`
 
-if ! make_backup "$NEXTID" "${cfg_SRCDIR}" "${MNTDIR}/${cfg_DSTDIR}"
+if ! make_backup "$NEXTID" "${cfg_SRCDIR}" "${MNTBCKDIR}/${cfg_DSTDIR}"
 then
     notify-users "RF backup" "Er is een fout opgetreden bij het maken van de backup" critical
     exit 0
 fi
 
-if umount "${MNTDIR}"
+if umount "${MNTBCKDIR}"
 then
     notify-users "RF backup" "De backup is afgerond op disk ${BCKLABEL}..." critical
 else
-    write-log "ERROR: Error unmounting ${MNTDIR}"
+    write-log "ERROR: Error unmounting ${MNTBCKDIR}"
     notify-users "RF backup" "Er is een fout opgetreden bij het afsluiten van de backup" critical
 fi
 
