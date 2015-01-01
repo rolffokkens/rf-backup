@@ -1,0 +1,7 @@
+01=More than 2 backup disk found, cannot continue
+02=No backup disk found, cannot continue
+03=The backup '%s' has started on disk '%s'...
+04=There was an error while starting the backup '%s'.
+05=There was an error while creating the backup '%s'.
+06=The backup '%s' has finished on disk '%s'.
+07=There was an error while finishing the backup '%s'.

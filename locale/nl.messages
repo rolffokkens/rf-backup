@@ -1,0 +1,7 @@
+01=Meer dan 1 backup disk gevonden, kan niet door gaan.
+02=Geen backup disk gevonden, kan niet door gaan.
+03=De backup '%s' is begonnen op disk '%s'...
+04=Er is een fout opgetreden bij het starten van de backup '%s'.
+05=Er is een fout opgetreden bij het maken van de backup '%s'.
+06=De backup '%s' is afgerond op disk '%s'...
+07=Er is een fout opgetreden bij het afsluiten van de backup '%s'.
