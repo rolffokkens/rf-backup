@@ -18,7 +18,21 @@ get-cfgs ()
 
 read-cfg ()
 {
-    eval $(sed -n 's/\(^[^#].*$\)/cfg_\1/p' "$1")
+    eval $(sed -n 's/\(^[^#].*$\)/cfg_\1/p' "$1.conf")
+}
+
+expand-cfgs ()
+{
+    local SEP
+
+    if [ $# == 1 ]
+    then
+        SEP=" "
+    else
+        SEP="$2"
+    fi
+
+    echo $1 | sed "s| |.conf${SEP}|g;s|$|.conf|"
 }
 
 split-labels ()
@@ -48,7 +62,7 @@ match-label ()
 
     for CFG in `get-cfgs`
     do
-        read-cfg "${CFG}.conf"
+        read-cfg "${CFG}"
 
         for i in `split-labels "${cfg_BACKUPLABELS}"`
         do
@@ -63,14 +77,14 @@ check-cfg-single ()
 {
     case "$2" in
     *\ *)
-        write-log "ERROR: mutiple configs apply for $1: $2"
+        write-log "ERROR: mutiple configs apply for $1: `expand-cfgs "$2" ", "`"
         return 1
         ;;
     "")
         return 1
         ;;
     *)
-        write-log "INFO: config $2 applies for $1"
+        write-log "INFO: config $2.conf applies for $1"
         return 0
     esac
 }
