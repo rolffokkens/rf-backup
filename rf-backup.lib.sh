@@ -2,6 +2,43 @@ CFGDIR=/etc/rf-backup.d/
 MNTDIR=/mnt/rf-backup
 LOGFILE=/var/log/rf-backup.log
 
+read-locale ()
+{
+    local LNG
+    local LOCDIR="${RFBCKDIR}/locale"
+
+    LNG="${LANG}."
+    LNG="${LNG%%.*}"
+
+    [ -e "${LOCDIR}/${LNG}.messages" ] || LNG="${LNG%%_*}"
+    [ -e "${LOCDIR}/${LNG}.messages" ] || LNG=en
+
+    unset rf_locale
+
+    declare -gA rf_locale
+
+    eval $(sed -n 's/\(^[^#][^#= ]\+\)\([=]\)\([^ ].*$\)/rf_locale["\1"]="\3"/p' "${LOCDIR}/${LNG}.messages")
+}
+
+init-rf-backup ()
+{
+    declare -g RFBCKDIR=`dirname "$0"`
+
+    declare -g LANG
+    [ -z "$LANG" ] && [ -e /etc/locale.conf ] && . /etc/locale.conf
+
+    read-locale
+}
+
+get-locale-msg ()
+{
+    local MSGTXT="${rf_locale[$1]}"
+
+    shift
+
+    printf "$MSGTXT" "$@"
+}
+
 get-cfgs ()
 {
     local i

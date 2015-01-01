@@ -1,11 +1,9 @@
 #!/bin/bash
 
-PATH=`dirname $0`:$PATH
+. `dirname $0`/rf-backup.lib.sh
 
-. rf-backup.lib.sh
-
-BCKIMG=/usr/share/icons/gnome/32x32/devices/drive-harddisk-usb.png
 BCKLABEL="$1"
+BCKIMG=/usr/share/icons/gnome/32x32/devices/drive-harddisk-usb.png
 
 notify-users ()
 {
@@ -42,14 +40,14 @@ find-backupdisk ()
         [ -e "/dev/disk/by-label/$LBL" ] || continue
         if [ "$RETVAL" != "" ]
         then
-            notify-users "RF backup" "Meer dan 1 backup disk gevonden, kan niet door gaan." critical
+            notify-users "RF backup" "`get-locale-msg 01`" critical
             return 1
         fi
         RETVAL="$LBL"
     done
     if [ "$RETVAL" == "" ]
     then
-        notify-users "RF backup" "Geen backup disk gevonden, kan niet door gaan." critical
+        notify-users "RF backup" "`get-locale-msg 02`" critical
         return 1
     fi
     echo "$RETVAL"
@@ -145,7 +143,7 @@ make_backup ()
         ;;
     esac
 
-    notify-users "RF backup" "De backup is begonnen op disk ${BCKLABEL}..."
+    notify-users "RF backup" "`get-locale-msg 03 "${BCKLABEL}"`"
 
     if [ "$LASTID" = "" ]
     then
@@ -184,6 +182,8 @@ main ()
     local CFGS=`match-label "$BCKLABEL"`
     local BCFG
 
+    init-rf-backup
+
     check-cfg-single "${PLABEL}" "${CFGS}" || exit 0
 
     BCFG=`basename "${CFGS}"`
@@ -196,7 +196,7 @@ main ()
 
     if ! cond-mount "${BCKLABEL}" "${MNTBCKDIR}" "${CFGS}"
     then
-        notify-users "RF backup" "Er is een fout opgetreden bij het starten van de backup" critical
+        notify-users "RF backup" "`get-locale-msg 04`" critical
         exit 0
     fi
 
@@ -204,16 +204,16 @@ main ()
 
     if ! make_backup "$NEXTID" "${cfg_SRCDIR}" "${MNTBCKDIR}/${cfg_DSTDIR}" "${CFGS}"
     then
-        notify-users "RF backup" "Er is een fout opgetreden bij het maken van de backup" critical
+        notify-users "RF backup" "`get-locale-msg 05`" critical
         exit 0
     fi
 
     if umount "${MNTBCKDIR}"
     then
-        notify-users "RF backup" "De backup is afgerond op disk ${BCKLABEL}..." critical
+        notify-users "RF backup" "`get-locale-msg 06 "${BCKLABEL}"`" critical
     else
         write-log "ERROR (${BCFG}): Error unmounting ${MNTBCKDIR}"
-        notify-users "RF backup" "Er is een fout opgetreden bij het afsluiten van de backup" critical
+        notify-users "RF backup" "`get-locale-msg 07`" critical
     fi
 
     exit 0
