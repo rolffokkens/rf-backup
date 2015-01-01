@@ -131,6 +131,7 @@ make_backup ()
     local SRCPATH="$2"
     local DSTPATH="$3"
     local CFG="$4"
+    local NAME="$5"
     local BCFG=`basename "$4"`
 
     write-log "INFO (${BCFG}): Making backup $NEXTID"
@@ -143,7 +144,7 @@ make_backup ()
         ;;
     esac
 
-    notify-users "RF backup" "`get-locale-msg 03 "${BCKLABEL}"`"
+    notify-users "RF backup" "`get-locale-msg 03 "${NAME}" "${BCKLABEL}"`"
 
     if [ "$LASTID" = "" ]
     then
@@ -190,30 +191,32 @@ main ()
 
     read-cfg "${CFGS}"
 
+    [ -z "${cfg_NAME}" ] && cfg_NAME="${BCFG}"
+
     MNTBCKDIR="${MNTDIR}/`basename "${CFGS}"`"
 
     mkdir -p "${MNTBCKDIR}"
 
     if ! cond-mount "${BCKLABEL}" "${MNTBCKDIR}" "${CFGS}"
     then
-        notify-users "RF backup" "`get-locale-msg 04`" critical
+        notify-users "RF backup" "`get-locale-msg 04 "${cfg_NAME}"`" critical
         exit 0
     fi
 
     NEXTID=`echo 1 | awk '{ print strftime ("%Y%m%d.%H%M%S")}'`
 
-    if ! make_backup "$NEXTID" "${cfg_SRCDIR}" "${MNTBCKDIR}/${cfg_DSTDIR}" "${CFGS}"
+    if ! make_backup "$NEXTID" "${cfg_SRCDIR}" "${MNTBCKDIR}/${cfg_DSTDIR}" "${CFGS}" "${cfg_NAME}"
     then
-        notify-users "RF backup" "`get-locale-msg 05`" critical
+        notify-users "RF backup" "`get-locale-msg 05 "${cfg_NAME}"`" critical
         exit 0
     fi
 
     if umount "${MNTBCKDIR}"
     then
-        notify-users "RF backup" "`get-locale-msg 06 "${BCKLABEL}"`" critical
+        notify-users "RF backup" "`get-locale-msg 06 "${cfg_NAME}" "${BCKLABEL}"`" critical
     else
         write-log "ERROR (${BCFG}): Error unmounting ${MNTBCKDIR}"
-        notify-users "RF backup" "`get-locale-msg 07`" critical
+        notify-users "RF backup" "`get-locale-msg 07 "${cfg_NAME}"`" critical
     fi
 
     exit 0

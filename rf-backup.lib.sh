@@ -54,7 +54,8 @@ get-cfgs ()
 
 read-cfg ()
 {
-    eval $(sed -n 's/\(^[^#].*$\)/cfg_\1/p' "$1.conf")
+    declare -g cfg_NAME="" cfg_BACKUPLABELS="" cfg_DSTDIR="" cfg_SRCDIR=""
+    eval $(sed -n 's/"/\\\"/g;s/\(^[^#][^#= ]\+\)\([=]\)\([^ ].*$\)/cfg_\1="\3"/p' "$1.conf")
 }
 
 expand-cfgs ()
