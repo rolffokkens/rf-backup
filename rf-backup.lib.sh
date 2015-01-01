@@ -1,5 +1,5 @@
 CFGDIR=/etc/rf-backup.d/
-MNTDIR=/mnt/backup
+MNTDIR=/mnt/rf-backup
 LOGFILE=/var/log/rf-backup.log
 
 get-cfgs ()
