@@ -1,1 +1,0 @@
-ENV{ID_BUS}=="usb", ATTRS{removable}=="1", PROGRAM="/usr/share/rf-backup/checklabel.sh $env{ID_FS_LABEL}", RESULT=="OK", ENV{SYSTEMD_WANTS}="rf-backup@$env{ID_FS_LABEL}.service", ENV{UDISKS_IGNORE}="1"

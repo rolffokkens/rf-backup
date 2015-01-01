@@ -1,0 +1,6 @@
+ENV{ID_BUS}=="usb", ACTION=="add", ENV{ID_FS_LABEL}=="?*", PROGRAM="/usr/share/rf-backup/checklabel.sh $env{ID_FS_LABEL}", RESULT=="OK", ENV{SYSTEMD_WANTS}="rf-backup@$env{ID_FS_LABEL}.service", ENV{UDISKS_IGNORE}="1", GOTO="rf_backup_end"
+
+ENV{ID_BUS}=="usb", ACTION=="?*", ENV{ID_FS_LABEL}=="?*", PROGRAM="/usr/share/rf-backup/checklabel.sh $env{ID_FS_LABEL}", RESULT=="OK", ENV{UDISKS_IGNORE}="1"
+
+LABEL="rf_backup_end"
+

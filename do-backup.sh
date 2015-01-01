@@ -83,14 +83,15 @@ cond-mount ()
 
     write-log "INFO: Mounting $RDEV on $RMNT"
 
-    mount "$RDEV" "$RMNT" -o acl,user_xattr 2>/dev/null
+    # mount "$RDEV" "$RMNT" -o acl,user_xattr 2>/dev/null
+    mount "$RDEV" "$RMNT" -o user_xattr 2>/dev/null
 
     if [ "$?" = "0" ]
     then
         return 0
     fi
 
-    write-log "ERROR: Unable to mount device with label $RLBL on $RMNT" >&2
+    write-log "ERROR: Unable to mount device $RDEV with label $RLBL on $RMNT" >&2
     return 1
 }
 
