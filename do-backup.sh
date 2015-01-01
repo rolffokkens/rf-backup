@@ -154,7 +154,8 @@ make_backup ()
 
 #    create_exclude_file > "$EXCLUDEFILE"
     > "$EXCLUDEFILE"
-    rsync -axXAHRS --exclude-from="$EXCLUDEFILE" \
+    # removed --xattrs 
+    rsync -axAHRS --exclude-from="$EXCLUDEFILE" \
           --delete --ignore-errors --delete-excluded --force \
           "$SRCPATH" "$DSTPATH/${NEXTID}"
     rm ""$EXCLUDEFILE""
