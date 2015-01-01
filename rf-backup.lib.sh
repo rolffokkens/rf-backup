@@ -17,7 +17,7 @@ read-locale ()
 
     declare -gA rf_locale
 
-    eval $(sed -n 's/\(^[^#][^#= ]\+\)\([=]\)\([^ ].*$\)/rf_locale["\1"]="\3"/p' "${LOCDIR}/${LNG}.messages")
+    eval $(sed -n 's/"/\\\"/g;s/\(^[^#][^#= ]\+\)\([=]\)\([^ ].*$\)/rf_locale["\1"]="\3"/p' "${LOCDIR}/${LNG}.messages")
 }
 
 init-rf-backup ()
