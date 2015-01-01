@@ -1,6 +1,5 @@
 CFGDIR=/etc/rf-backup.d/
 MNTDIR=/mnt/backup
-EXCLUDEFILE=/tmp/rsync-backup-exclude-$$.lis
 LOGFILE=/var/log/rf-backup.log
 
 get-cfgs ()

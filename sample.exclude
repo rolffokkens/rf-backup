@@ -1,0 +1,4 @@
+/home/*.cache
+/home/*/rpmbuild/BUILD
+/home/*/rpmbuild/BUILDROOT
+

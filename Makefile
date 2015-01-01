@@ -10,4 +10,5 @@ install:
 	install -m 755 do-backup.sh $(DESTDIR)/usr/share/rf-backup
 	install -m 755 rf-backup.lib.sh $(DESTDIR)/usr/share/rf-backup/rf-backup.lib.sh
 	install -m 644 rf-backup@.service $(DESTDIR)/usr/lib/systemd/system/rf-backup@.service
-	install -m 644 rf-backup.conf $(DESTDIR)/etc/rf-backup.d/conf.sample
+	install -m 644 sample.conf $(DESTDIR)/etc/rf-backup.d/sample.conf.sample
+	install -m 644 sample.exclude $(DESTDIR)/etc/rf-backup.d/sample.exclude.sample

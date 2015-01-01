@@ -131,6 +131,7 @@ make_backup ()
     local NEXTID="$1"
     local SRCPATH="$2"
     local DSTPATH="$3"
+    local CFG="$4"
 
     write-log "INFO: Making backup $NEXTID"
 
@@ -151,49 +152,66 @@ make_backup ()
         write-log "INFO: Making copy of previous backup $LASTID"
         cp -apl "$DSTPATH/${LASTID}" "$DSTPATH/${NEXTID}"
     fi
-    write-log "INFO: Updating contents" >&2
 
-#    create_exclude_file > "$EXCLUDEFILE"
-    > "$EXCLUDEFILE"
+    TMPEXCL=`mktemp /tmp/rf-backup-XXXXXX`
+
+    if [ -e "${CFG}.exclude" ]
+    then
+        write-log "INFO: Using excludes in ${CFG}.exclude"
+        cat < "${CFG}.exclude" > "${TMPEXCL}"
+    fi
+
+    write-log "INFO: Updating contents" >&2
     # removed --xattrs 
-    rsync -axAHRS --exclude-from="$EXCLUDEFILE" \
+    rsync -axAHRS --exclude-from="${TMPEXCL}" \
           --delete --ignore-errors --delete-excluded --force \
           "$SRCPATH" "$DSTPATH/${NEXTID}"
-    rm ""$EXCLUDEFILE""
+
+    rm "${TMPEXCL}"
+
+    write-log "INFO: Contents updated" >&2
 
     return 0
 }
 
-CFGS=`match-label "$BCKLABEL"`
+main ()
+{
+    local PLABEL="$1"
+    local MNTBCKDIR
+    local NEXTID
+    local CFGS=`match-label "$BCKLABEL"`
 
-check-cfg-single "$1" "$CFGS" || exit 0
+    check-cfg-single "${PLABEL}" "${CFGS}" || exit 0
 
-read-cfg "$CFGS"
+    read-cfg "${CFGS}"
 
-MNTBCKDIR="${MNTDIR}/`basename "$CFGS"`"
+    MNTBCKDIR="${MNTDIR}/`basename "${CFGS}"`"
 
-mkdir -p "${MNTBCKDIR}"
+    mkdir -p "${MNTBCKDIR}"
 
-if ! cond-mount "${BCKLABEL}" "${MNTBCKDIR}"
-then
-    notify-users "RF backup" "Er is een fout opgetreden bij het starten van de backup" critical
+    if ! cond-mount "${BCKLABEL}" "${MNTBCKDIR}"
+    then
+        notify-users "RF backup" "Er is een fout opgetreden bij het starten van de backup" critical
+        exit 0
+    fi
+
+    NEXTID=`echo 1 | awk '{ print strftime ("%Y%m%d.%H%M%S")}'`
+
+    if ! make_backup "$NEXTID" "${cfg_SRCDIR}" "${MNTBCKDIR}/${cfg_DSTDIR}" "${CFGS}"
+    then
+        notify-users "RF backup" "Er is een fout opgetreden bij het maken van de backup" critical
+        exit 0
+    fi
+
+    if umount "${MNTBCKDIR}"
+    then
+        notify-users "RF backup" "De backup is afgerond op disk ${BCKLABEL}..." critical
+    else
+        write-log "ERROR: Error unmounting ${MNTBCKDIR}"
+        notify-users "RF backup" "Er is een fout opgetreden bij het afsluiten van de backup" critical
+    fi
+
     exit 0
-fi
+}
 
-NEXTID=`echo 1 | awk '{ print strftime ("%Y%m%d.%H%M%S")}'`
-
-if ! make_backup "$NEXTID" "${cfg_SRCDIR}" "${MNTBCKDIR}/${cfg_DSTDIR}"
-then
-    notify-users "RF backup" "Er is een fout opgetreden bij het maken van de backup" critical
-    exit 0
-fi
-
-if umount "${MNTBCKDIR}"
-then
-    notify-users "RF backup" "De backup is afgerond op disk ${BCKLABEL}..." critical
-else
-    write-log "ERROR: Error unmounting ${MNTBCKDIR}"
-    notify-users "RF backup" "Er is een fout opgetreden bij het afsluiten van de backup" critical
-fi
-
-exit 0
+main "$1"
