@@ -60,6 +60,7 @@ cond-mount ()
 {
     local RLBL="$1"
     local RMNT="$2"
+    local BCFG=`basename "$3"`
     local RDEV=`readlink -f /dev/disk/by-label/$RLBL`
 
     local DEV MPT REST
@@ -69,19 +70,19 @@ cond-mount ()
         [ "$DEV" != "$RDEV" ] && [ "$MPT" != "$RMNT" ] && continue
         if [ "$DEV" = "$RDEV" ] && [ "$MPT" = "$RMNT" ]
         then
-            write-log "INFO: $RDEV already mounted on $RMNT"
+            write-log "INFO (${BCFG}): $RDEV already mounted on $RMNT"
             return 0
         fi
         if [ "$DEV" = "$RDEV" ]
         then
-            write-log "ERROR: $RDEV already mounted on $MPT"
+            write-log "ERROR (${BCFG}): $RDEV already mounted on $MPT"
         else
-            write-log "ERROR: $DEV already mounted on $RMNT"
+            write-log "ERROR (${BCFG}): $DEV already mounted on $RMNT"
         fi
         return 1
     done < /proc/mounts
 
-    write-log "INFO: Mounting $RDEV on $RMNT"
+    write-log "INFO (${BCFG}): Mounting $RDEV on $RMNT"
 
     # mount "$RDEV" "$RMNT" -o acl,user_xattr 2>/dev/null
     mount "$RDEV" "$RMNT" -o user_xattr 2>/dev/null
@@ -91,7 +92,7 @@ cond-mount ()
         return 0
     fi
 
-    write-log "ERROR: Unable to mount device $RDEV with label $RLBL on $RMNT" >&2
+    write-log "ERROR (${BCFG}): Unable to mount device $RDEV with label $RLBL on $RMNT" >&2
     return 1
 }
 
@@ -132,13 +133,14 @@ make_backup ()
     local SRCPATH="$2"
     local DSTPATH="$3"
     local CFG="$4"
+    local BCFG=`basename "$4"`
 
-    write-log "INFO: Making backup $NEXTID"
+    write-log "INFO (${BCFG}): Making backup $NEXTID"
 
     LASTID=`get_last_id "$DSTPATH" $NEXTID`
     case "$LASTID" in
         ERROR:*)
-            write-log "ERROR: Bad last backup ${LASTID#*:}"
+            write-log "ERROR (${BCFG}): Bad last backup ${LASTID#*:}"
             return 1;
         ;;
     esac
@@ -149,7 +151,7 @@ make_backup ()
     then
         mkdir -p "$DSTPATH/${NEXTID}"
     else
-        write-log "INFO: Making copy of previous backup $LASTID"
+        write-log "INFO (${BCFG}): Making copy of previous backup $LASTID"
         cp -apl "$DSTPATH/${LASTID}" "$DSTPATH/${NEXTID}"
     fi
 
@@ -157,11 +159,11 @@ make_backup ()
 
     if [ -e "${CFG}.exclude" ]
     then
-        write-log "INFO: Using excludes in ${CFG}.exclude"
+        write-log "INFO (${BCFG}): Using excludes in ${CFG}.exclude"
         cat < "${CFG}.exclude" > "${TMPEXCL}"
     fi
 
-    write-log "INFO: Updating contents" >&2
+    write-log "INFO (${BCFG}): Updating contents" >&2
     # removed --xattrs 
     rsync -axAHRS --exclude-from="${TMPEXCL}" \
           --delete --ignore-errors --delete-excluded --force \
@@ -169,7 +171,7 @@ make_backup ()
 
     rm "${TMPEXCL}"
 
-    write-log "INFO: Contents updated" >&2
+    write-log "INFO (${BCFG}): Contents updated" >&2
 
     return 0
 }
@@ -180,8 +182,11 @@ main ()
     local MNTBCKDIR
     local NEXTID
     local CFGS=`match-label "$BCKLABEL"`
+    local BCFG
 
     check-cfg-single "${PLABEL}" "${CFGS}" || exit 0
+
+    BCFG=`basename "${CFGS}"`
 
     read-cfg "${CFGS}"
 
@@ -189,7 +194,7 @@ main ()
 
     mkdir -p "${MNTBCKDIR}"
 
-    if ! cond-mount "${BCKLABEL}" "${MNTBCKDIR}"
+    if ! cond-mount "${BCKLABEL}" "${MNTBCKDIR}" "${CFGS}"
     then
         notify-users "RF backup" "Er is een fout opgetreden bij het starten van de backup" critical
         exit 0
@@ -207,7 +212,7 @@ main ()
     then
         notify-users "RF backup" "De backup is afgerond op disk ${BCKLABEL}..." critical
     else
-        write-log "ERROR: Error unmounting ${MNTBCKDIR}"
+        write-log "ERROR (${BCFG}): Error unmounting ${MNTBCKDIR}"
         notify-users "RF backup" "Er is een fout opgetreden bij het afsluiten van de backup" critical
     fi
 
