@@ -41,7 +41,7 @@ cond-mount ()
         return 0
     fi
 
-    write-log "ERROR (${BCFG}): Unable to mount device $RDEV with label $RLBL on $RMNT" >&2
+    write-log "ERROR (${BCFG}): Unable to mount device $RDEV with label $RLBL on $RMNT"
     return 1
 }
 
@@ -102,7 +102,11 @@ make_backup ()
         mkdir -p "$DSTPATH/${NEXTID}"
     else
         write-log "INFO (${BCFG}): Making copy of previous backup $LASTID"
-        cp -apl "$DSTPATH/${LASTID}" "$DSTPATH/${NEXTID}"
+       if ! cp -apl "$DSTPATH/${LASTID}" "$DSTPATH/${NEXTID}"
+       then
+           write-log "ERROR (${BCFG}): cp failed"
+           return 1
+       fi
     fi
 
     TMPEXCL=`mktemp /tmp/rf-backup-XXXXXX`
@@ -113,15 +117,23 @@ make_backup ()
         cat < "${CFG}.exclude" > "${TMPEXCL}"
     fi
 
-    write-log "INFO (${BCFG}): Updating contents" >&2
+    write-log "INFO (${BCFG}): Updating contents"
     # removed --xattrs 
     rsync -axAHRS --exclude-from="${TMPEXCL}" \
           --delete --ignore-errors --delete-excluded --force \
           "$SRCPATH" "$DSTPATH/${NEXTID}"
 
+    RET=$?
+
     rm "${TMPEXCL}"
 
-    write-log "INFO (${BCFG}): Contents updated" >&2
+    if [ "$RET" != "0" ]
+    then
+        write-log "ERROR (${BCFG}): rsync failed"
+        return 1
+    fi
+
+    write-log "INFO (${BCFG}): Contents updated"
 
     return 0
 }
