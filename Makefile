@@ -9,7 +9,7 @@ install-f20: install-common install-rules-f20
 install-common:
 	install -d $(DESTDIR)/usr/lib/udev/rules.d/ $(DESTDIR)/usr/lib/systemd/system \
 	$(DESTDIR)/usr/share/rf-backup/locale $(DESTDIR)/etc/rf-backup.d/ \
-	 $(DESTDIR)/var/run/rf-backup $(DESTDIR)/etc/tmpfiles.d/
+	 $(DESTDIR)/var/run/rf-backup $(DESTDIR)/usr/lib/tmpfiles.d/
 	install -m 755 checklabel.sh $(DESTDIR)/usr/share/rf-backup/checklabel.sh
 	install -m 755 mark-remove.sh $(DESTDIR)/usr/share/rf-backup/mark-remove.sh
 	install -m 755 do-backup.sh $(DESTDIR)/usr/share/rf-backup/do-backup.sh
