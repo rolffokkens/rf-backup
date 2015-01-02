@@ -130,3 +130,32 @@ write-log ()
 {
     echo "$1" | awk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0; }' >> ${LOGFILE}
 }
+
+notify-users ()
+{
+    local TITLE=$1
+    local MSG=$2
+    local BCFG=$3
+    local URG=$4
+
+    [ "$URG" == "" ] && URG=normal
+
+    write-log "USER (${BCFG}): ${TITLE}: ${MSG}"
+
+    who \
+    | awk '{ if ($2 ~ "^[:]") print $1, $2; }' \
+    | while read USER DISP
+      do
+           for pid in `pgrep -u "$USER" dbus-daemon`
+           do
+               unset prc_DISPLAY prc_DBUS_SESSION_BUS_ADDRESS
+               eval $(grep -z -e DISPLAY= -e DBUS_SESSION_BUS_ADDRESS= /proc/$pid/environ | sed 's/\o00/\n/' | sed 's|^|prc_|')
+               [ "$prc_DISPLAY"                  == "$DISP" ] || continue
+               [ "$prc_DBUS_SESSION_BUS_ADDRESS" == ""      ] && continue
+               su - "$USER" -c "DBUS_SESSION_BUS_ADDRESS=$prc_DBUS_SESSION_BUS_ADDRESS /bin/notify-send -i \"${BCKIMG}\" \"${TITLE}\" \"${MSG}\" -u ${URG}"
+           done
+      done
+
+    wall "${TITLE}: ${MSG}" > /dev/null 2>&1
+}
+

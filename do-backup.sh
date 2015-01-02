@@ -5,55 +5,6 @@
 BCKLABEL="$1"
 BCKIMG=/usr/share/icons/gnome/32x32/devices/drive-harddisk-usb.png
 
-notify-users ()
-{
-    local TITLE=$1
-    local MSG=$2
-    local URG=$3
-
-    [ "$URG" == "" ] && URG=normal
-
-    logger -t "rf-backup" "${TITLE}: ${MSG}"
-
-    who \
-    | awk '{ if ($2 ~ "^[:]") print $1, $2; }' \
-    | while read USER DISP
-      do
-          su - "$USER" -c "DISPLAY=$DISP /bin/notify-send -i \"${BCKIMG}\" \"${TITLE}\" \"${MSG}\" -u ${URG}"
-      done
-
-    /bin/wall "$MSG" > /dev/null 2>&1
-}
-
-find-backupdisk ()
-{
-    RETVAL=""
-
-    LBLS="${cfg_BACKUPLABELS},"
-
-    while [ "${LBLS}" != "" ]
-    do
-
-        LBL=${LBLS%%,*}
-        LBLS=${LBLS#*,}
-
-        [ -e "/dev/disk/by-label/$LBL" ] || continue
-        if [ "$RETVAL" != "" ]
-        then
-            notify-users "RF backup" "`get-locale-msg 01`" critical
-            return 1
-        fi
-        RETVAL="$LBL"
-    done
-    if [ "$RETVAL" == "" ]
-    then
-        notify-users "RF backup" "`get-locale-msg 02`" critical
-        return 1
-    fi
-    echo "$RETVAL"
-    return 0
-}
-
 cond-mount ()
 {
     local RLBL="$1"
@@ -144,7 +95,7 @@ make_backup ()
         ;;
     esac
 
-    notify-users "RF backup" "`get-locale-msg 03 "${NAME}" "${BCKLABEL}"`"
+    notify-users "RF backup" "`get-locale-msg 03 "${NAME}" "${BCKLABEL}"`" "${BCFG}"
 
     if [ "$LASTID" = "" ]
     then
@@ -199,7 +150,7 @@ main ()
 
     if ! cond-mount "${BCKLABEL}" "${MNTBCKDIR}" "${CFGS}"
     then
-        notify-users "RF backup" "`get-locale-msg 04 "${cfg_NAME}"`" critical
+        notify-users "RF backup" "`get-locale-msg 04 "${cfg_NAME}"`" "${BCFG}" critical
         exit 0
     fi
 
@@ -207,16 +158,16 @@ main ()
 
     if ! make_backup "$NEXTID" "${cfg_SRCDIR}" "${MNTBCKDIR}/${cfg_DSTDIR}" "${CFGS}" "${cfg_NAME}"
     then
-        notify-users "RF backup" "`get-locale-msg 05 "${cfg_NAME}"`" critical
+        notify-users "RF backup" "`get-locale-msg 05 "${cfg_NAME}"`" "${BCFG}" critical
         exit 0
     fi
 
     if umount "${MNTBCKDIR}"
     then
-        notify-users "RF backup" "`get-locale-msg 06 "${cfg_NAME}" "${BCKLABEL}"`" critical
+        notify-users "RF backup" "`get-locale-msg 06 "${cfg_NAME}" "${BCKLABEL}"`" "${BCFG}" critical
     else
         write-log "ERROR (${BCFG}): Error unmounting ${MNTBCKDIR}"
-        notify-users "RF backup" "`get-locale-msg 07 "${cfg_NAME}"`" critical
+        notify-users "RF backup" "`get-locale-msg 07 "${cfg_NAME}"`" "${BCFG}" critical
     fi
 
     exit 0
