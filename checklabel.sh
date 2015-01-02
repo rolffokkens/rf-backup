@@ -1,11 +1,20 @@
 #!/bin/bash
 
-PATH=`dirname $0`:$PATH
+PLABEL="$1"
 
-. rf-backup.lib.sh
+. `dirname $0`/rf-backup.lib.sh
 
-CFGS=`match-label "$1"`
+[ -e "${RUNDIR}/${PLABEL}.nxt" ] && NEXTAFTER=$((`cat "${RUNDIR}/${PLABEL}.nxt"`+0))
+[ $((${NEXTAFTER}+0)) -lt `date +%s` ] || exit 0
 
-check-cfg-single "$1" "$CFGS" && echo OK
+CFGS=`match-label "${PLABEL}"`
+
+check-cfg-single "${PLABEL}" "$CFGS" || exit 0
+
+read-cfg "$CFGS"
+
+[ $((${cfg_NEXTAFTER}+0)) -gt 0 ] || cfg_NEXTAFTER=0
+
+echo `basename "$CFGS"` "$cfg_NEXTAFTER"
 
 exit 0

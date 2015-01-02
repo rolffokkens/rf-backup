@@ -1,5 +1,6 @@
 CFGDIR=/etc/rf-backup.d/
 MNTDIR=/mnt/rf-backup
+RUNDIR=/var/run/rf-backup
 LOGFILE=/var/log/rf-backup.log
 
 read-locale ()
@@ -54,8 +55,13 @@ get-cfgs ()
 
 read-cfg ()
 {
-    declare -g cfg_NAME="" cfg_BACKUPLABELS="" cfg_DSTDIR="" cfg_SRCDIR=""
+    declare -g cfg_NAME="" cfg_BACKUPLABELS="" cfg_DSTDIR="" cfg_SRCDIR="" cfg_NEXTAFTER=""
+
+    [ -e "$1.conf" ] || return 1
+
     eval $(sed -n 's/"/\\\"/g;s/\(^[^#][^#= ]\+\)\([=]\)\([^ ].*$\)/cfg_\1="\3"/p' "$1.conf")
+
+    return 0
 }
 
 expand-cfgs ()
