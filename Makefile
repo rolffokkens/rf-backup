@@ -18,7 +18,7 @@ install-common:
 	install -m 644 sample.conf $(DESTDIR)/etc/rf-backup.d/sample.conf.sample
 	install -m 644 sample.exclude $(DESTDIR)/etc/rf-backup.d/sample.exclude.sample
 	install -m 644 locale/* $(DESTDIR)/usr/share/rf-backup/locale
-	install -m 644 tmpfiles.conf $(DESTDIR)/etc/rf-backup.d/rf-backup.conf
+	install -m 644 tmpfiles.conf $(DESTDIR)/etc/tmpfiles.d/rf-backup.conf
 
 install-rules:
 	install -m 644 99-rf-backups.rules $(DESTDIR)/usr/lib/udev/rules.d/99-rf-backups.rules
