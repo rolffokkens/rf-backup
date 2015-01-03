@@ -165,3 +165,29 @@ notify-users ()
     wall "${TITLE}: ${MSG}" > /dev/null 2>&1
 }
 
+action-and-log ()
+{
+    local BCFG="$1"
+    local RETVAL
+    local TMP=`mktemp /tmp/do-backup-XXXXXX`
+
+    shift
+
+    eval "$@" > "${TMP}" 2>&1
+
+    RETVAL=$?
+
+    if [ "${RETVAL}" != "0" ]
+    then
+        write-log "CMD (${BCFG}): `echo "$@"`"
+        cat "${TMP}" \
+        | while read LINE
+          do
+              write-log "LOG (${BCFG}): ${LINE}"
+          done
+    fi
+
+    rm "${TMP}"
+
+    return ${RETVAL}
+}

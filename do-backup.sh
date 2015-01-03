@@ -13,6 +13,8 @@ cond-mount ()
 
     local DEV MPT REST
 
+    write-log "INFO (${BCFG}): Mounting $RDEV on $RMNT"
+
     while read DEV MPT REST
     do
         [ "$DEV" != "$RDEV" ] && [ "$MPT" != "$RMNT" ] && continue
@@ -30,12 +32,10 @@ cond-mount ()
         return 1
     done < /proc/mounts
 
-    write-log "INFO (${BCFG}): Mounting $RDEV on $RMNT"
-
     # mount "$RDEV" "$RMNT" -o acl,user_xattr 2>/dev/null
-    mount "$RDEV" "$RMNT" -o user_xattr 2>/dev/null
 
-    if [ "$?" = "0" ]
+    if action-and-log "${BCFG}" \
+           mount "\"${RDEV}\"" "\"${RMNT}\"" -o user_xattr
     then
         return 0
     fi
@@ -102,7 +102,8 @@ make_backup ()
         mkdir -p "$DSTPATH/${NEXTID}"
     else
         write-log "INFO (${BCFG}): Making copy of previous backup $LASTID"
-       if ! cp -apl "$DSTPATH/${LASTID}" "$DSTPATH/${NEXTID}"
+       if ! action-and-log "${BCFG}" \
+                cp -apl "\"$DSTPATH/${LASTID}\"" "\"$DSTPATH/${NEXTID}\""
        then
            write-log "ERROR (${BCFG}): cp failed"
            return 1
@@ -119,9 +120,10 @@ make_backup ()
 
     write-log "INFO (${BCFG}): Updating contents"
     # removed --xattrs 
-    rsync -axAHRS --exclude-from="${TMPEXCL}" \
-          --delete --ignore-errors --delete-excluded --force \
-          "$SRCPATH" "$DSTPATH/${NEXTID}"
+    action-and-log "${BCFG}" \
+        rsync -axAHRS --exclude-from="\"${TMPEXCL}\"" \
+              --delete --ignore-errors --delete-excluded --force \
+              "\"$SRCPATH\"" "\"$DSTPATH/${NEXTID}\""
 
     RET=$?
 
@@ -178,7 +180,10 @@ main ()
         exit 0
     fi
 
-    if umount "${MNTBCKDIR}"
+    write-log "INFO (${BCFG}): Unmounting ${MNTBCKDIR}"
+
+    if action-and-log "${BCFG}" \
+        umount "\"${MNTBCKDIR}\""
     then
         notify-users "RF backup" "`get-locale-msg 06 "${cfg_NAME}" "${PLABEL}"`" "${PCFG}" critical
     else
