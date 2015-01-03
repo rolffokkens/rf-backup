@@ -1,12 +1,12 @@
-ENV{ID_BUS}=="usb", ACTION=="add", ENV{ID_FS_LABEL}=="?*", PROGRAM="/usr/share/rf-backup/checklabel.sh $env{ID_FS_LABEL}", RESULT=="?*", ENV{SYSTEMD_WANTS}="rf-backup@$env{ID_FS_LABEL}:%c{1}.service", ENV{UDISKS_IGNORE}="1", ENV{RF_BACKUP_UDISKAFTER}="%c{2}", GOTO="rf_backup_end"
+ENV{ID_BUS}=="usb", ACTION=="add", ENV{ID_FS_LABEL}=="?*", PROGRAM="/usr/share/rf-backup/checklabel.sh $env{ID_FS_LABEL}", RESULT=="?*", ENV{SYSTEMD_WANTS}="rf-backup@$env{ID_FS_LABEL}:%c{1}.service", ENV{UDISKS_IGNORE}="1", ENV{RF_BACKUP_NEXTAFTER}="%c{2}", GOTO="rf_backup_end"
 
-ENV{RF_BACKUP_UDISKAFTER}=="?*", ACTION=="remove", PROGRAM="/usr/share/rf-backup/mark-remove.sh $env{ID_FS_LABEL} $env{RF_BACKUP_UDISKAFTER}", GOTO="rf_backup_end"
+ENV{RF_BACKUP_NEXTAFTER}=="?*", ACTION=="remove", PROGRAM="/usr/share/rf-backup/mark-remove.sh $env{ID_FS_LABEL} $env{RF_BACKUP_NEXTAFTER}", GOTO="rf_backup_end"
 
 # The following should be hypothetical:
-#ENV{RF_BACKUP_UDISKAFTER}=="?*", ACTION=="add", ENV{UDISKS_IGNORE}="1", GOTO="rf_backup_end"
+#ENV{RF_BACKUP_NEXTAFTER}=="?*", ACTION=="add", ENV{UDISKS_IGNORE}="1", GOTO="rf_backup_end"
 
 # The following should apply to anything after add:
-#ENV{RF_BACKUP_UDISKAFTER}=="yes", ENV{UDISKS_IGNORE}="0"
+#ENV{RF_BACKUP_NEXTAFTER}=="yes", ENV{UDISKS_IGNORE}="0"
 
 LABEL="rf_backup_end"
 
