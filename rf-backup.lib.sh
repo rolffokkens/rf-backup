@@ -143,23 +143,25 @@ notify-users ()
     local MSG=$2
     local BCFG=$3
     local URG=$4
+    local USER
 
     [ "$URG" == "" ] && URG=normal
 
     write-log "USER (${BCFG}): ${TITLE}: ${MSG}"
 
-    who \
-    | awk '{ if ($2 ~ "^[:]") print $1, $2; }' \
-    | while read USER DISP
+    for pid in `pgrep dbus-daemon`
+    do
+        USER="`stat -c"%U" "/proc/${pid}"`"
+        unset prc_DISPLAY prc_DBUS_SESSION_BUS_ADDRESS
+        eval $(grep -z -e DISPLAY= -e DBUS_SESSION_BUS_ADDRESS= /proc/$pid/environ | sed 's/\o00/\n/' | sed 's|^|prc_|')
+        [ "$prc_DISPLAY"                  == "" ] && continue
+        [ "$prc_DBUS_SESSION_BUS_ADDRESS" == "" ] && continue
+        echo "${USER}|${prc_DBUS_SESSION_BUS_ADDRESS}"
+    done \
+    | sort -u \
+    | while IFS="|" read USER prc_DBUS_SESSION_BUS_ADDRESS
       do
-           for pid in `pgrep -u "$USER" dbus-daemon`
-           do
-               unset prc_DISPLAY prc_DBUS_SESSION_BUS_ADDRESS
-               eval $(grep -z -e DISPLAY= -e DBUS_SESSION_BUS_ADDRESS= /proc/$pid/environ | sed 's/\o00/\n/' | sed 's|^|prc_|')
-               [ "$prc_DISPLAY"                  == "$DISP" ] || continue
-               [ "$prc_DBUS_SESSION_BUS_ADDRESS" == ""      ] && continue
-               su - "$USER" -c "DBUS_SESSION_BUS_ADDRESS=$prc_DBUS_SESSION_BUS_ADDRESS /bin/notify-send -i \"${BCKIMG}\" \"${TITLE}\" \"${MSG}\" -u ${URG}"
-           done
+          su - "$USER" -c "DBUS_SESSION_BUS_ADDRESS=$prc_DBUS_SESSION_BUS_ADDRESS /bin/notify-send -i \"${BCKIMG}\" \"${TITLE}\" \"${MSG}\" -u ${URG}"
       done
 
     wall "${TITLE}: ${MSG}" > /dev/null 2>&1
