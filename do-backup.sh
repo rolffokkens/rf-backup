@@ -180,7 +180,7 @@ main ()
         exit 0
     fi
 
-    write-log "INFO (${BCFG}): Unmounting ${MNTBCKDIR}"
+    write-log "INFO (${PCFG}): Unmounting ${MNTBCKDIR}"
 
     if action-and-log "${BCFG}" \
         umount "\"${MNTBCKDIR}\""
