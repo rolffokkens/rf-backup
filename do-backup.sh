@@ -147,6 +147,11 @@ main ()
     local MNTBCKDIR
     local NEXTID
     local BCFG
+    local DF1
+    local DU1
+    local DF2
+    local DU2
+    local AVGSIZ
 
     PLABEL="${PLABEL%%:*}"
     PCFG="${PCFG%%:*}"
@@ -172,6 +177,23 @@ main ()
         exit 0
     fi
 
+    AVGSIZ=`get-backup-size "${cfg_SRCDIR}" "${PLABEL}"`
+
+    write-log "DEBUG (AVGSIZ): $AVGSIZ"
+
+    DF1=`get-df "${MNTBCKDIR}"`
+    DF1="${DF1#* }"
+    DU1="${DF1%% *}"
+    DF1="${DF1#* }"
+
+    write-log "DEBUG (DF/DU): [$DF1][$DU1]"
+
+    if [ "$(($AVGSIZ * 2))" -gt "$DF1" ]
+    then
+        notify-users "RF backup" "`get-locale-msg 08 "${cfg_NAME}"`" "${PCFG}" critical
+        exit 0
+    fi
+
     NEXTID=`echo 1 | awk '{ print strftime ("%Y%m%d.%H%M%S")}'`
 
     if ! make_backup "$NEXTID" "${cfg_SRCDIR}" "${MNTBCKDIR}/${cfg_DSTDIR}" "${CFGS}" "${cfg_NAME}" "${PLABEL}"
@@ -179,6 +201,13 @@ main ()
         notify-users "RF backup" "`get-locale-msg 05 "${cfg_NAME}"`" "${PCFG}" critical
         exit 0
     fi
+
+    DF2=`get-df "${MNTBCKDIR}"`
+    DF2="${DF2#* }"
+    DU2="${DF2%% *}"
+    DF2="${DF2#* }"
+    write-log "DEBUG (DF/DU): [$DF2][$DU2][$(($DU2-$DU1))]"
+    add-backup-size "${cfg_SRCDIR}" "${PLABEL}" "$(($DU2-$DU1))"
 
     write-log "INFO (${PCFG}): Unmounting ${MNTBCKDIR}"
 

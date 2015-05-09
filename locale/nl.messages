@@ -5,3 +5,4 @@
 05=Er is een fout opgetreden bij het maken van de backup '%s'.
 06=De backup '%s' is afgerond op disk '%s'...
 07=Er is een fout opgetreden bij het afsluiten van de backup '%s'.
+08=Er is onvoldoende diskruimte om een backup '%s' te maken.

@@ -1,6 +1,7 @@
 CFGDIR=/etc/rf-backup.d/
 MNTDIR=/mnt/rf-backup
 RUNDIR=/var/run/rf-backup
+LIBDIR=/var/lib/rf-backup
 LOGFILE=/var/log/rf-backup.log
 
 read-locale ()
@@ -192,4 +193,73 @@ action-and-log ()
     rm "${TMP}"
 
     return ${RETVAL}
+}
+
+get-df ()
+{
+    df -k | awk -v "MNT=$1" '{ if ($0 "//" ~ " " MNT "[/]*$") print $1, $3, $4}'
+}
+
+get-backup-size ()
+{
+    local DIR="$1"
+    local LABEL="$2"
+    local STATS="${LIBDIR}/${LABEL}.stats"
+
+    if [ ! -s "$STATS" ]
+    then
+        echo 0
+        return 0
+    fi
+
+    awk "-F|" -v "DIR=$DIR" -v "SIZE=$SIZE" '
+    BEGIN {
+        size = 0;
+        l    = 0;
+    }
+    {
+        if ($1 != DIR) next;
+        size += $2;
+        l++;
+    }
+    END {
+        print int (size/l);
+    }' "$STATS"
+}
+
+add-backup-size ()
+{
+    local DIR="$1"
+    local LABEL="$2"
+    local SIZE="$3"
+    local STATS="${LIBDIR}/${LABEL}.stats"
+    local TMP1=`mktemp "${LIBDIR}/${LABEL}-XXXXXX.stats"`
+    local DT=`date +%s`
+
+    [ "$SIZE" -lt "0" ] && return 0
+
+    [ -e "$STATS" ] || touch "$STATS"
+
+    awk "-F|" -v "DIR=$DIR" -v "SIZE=$SIZE" -v "DT=$DT" '
+    BEGIN {
+        l    = 0;
+        size = SIZE;
+    }
+    {
+        if (NF != 3) next;
+        if ($1 != DIR) {
+            print $0;
+            next;
+        }
+        lines[l++] = $0;
+        size      += $2;
+    }
+    END {
+        lines[l++]=DIR "|" SIZE "|" DT;
+        i = l-5;
+        if (i < 0) i = 0;
+        while (i < l) print lines[i++];
+    }' "$STATS" > "$TMP1"
+
+    mv -f "$TMP1" "$STATS"
 }
