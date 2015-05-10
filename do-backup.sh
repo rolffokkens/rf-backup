@@ -239,7 +239,7 @@ main ()
 
     if [ "${cfg_MAIL}" != "" ]
     then
-        sendwait=1 HOME=/root MAILRC=/dev/null /usr/bin/mailx -s "`cat "${TNOTI}"`" rolf@rolffokkens.nl < "${TLOG}" > /tmp/weg.mailx 2>&1
+        sendwait=1 HOME=/root MAILRC=/dev/null /usr/bin/mailx -s "`cat "${TNOTI}"`" rolf@rolffokkens.nl < "${TLOG}"
     fi
 
     rm -f "${TLOG}" "${TNOTI}"
