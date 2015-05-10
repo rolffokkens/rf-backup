@@ -1,0 +1,1 @@
+0 12 * * * root /usr/share/rf-backup/check-backups.sh
