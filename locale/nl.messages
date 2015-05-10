@@ -6,3 +6,6 @@
 06=De backup '%s' is afgerond op disk '%s'...
 07=Er is een fout opgetreden bij het afsluiten van de backup '%s'.
 08=Er is onvoldoende diskruimte om een backup '%s' te maken.
+09=Backup '%s' moet weer worden gemaakt.
+10=Backup is %s dagen niet gemaakt.
+11=Backup is nog nooit gemaakt.

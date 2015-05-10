@@ -6,3 +6,6 @@
 06=The backup '%s' has finished on disk '%s'.
 07=There was an error while finishing the backup '%s'.
 08=There is insufficient disk space to make backup '%s'.
+09=Backup '%s' needs to be made.
+10=Backup has not run for %s days.
+11=Backup has never been made.
