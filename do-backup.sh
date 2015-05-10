@@ -140,10 +140,12 @@ make_backup ()
     return 0
 }
 
-main ()
+do-work ()
 {
-    local PLABEL="$1:"
-    local PCFG="${PLABEL#*:}"
+    local PLABEL="$1"
+    local PCFG="$2"
+    local CFGS="$3"
+
     local MNTBCKDIR
     local NEXTID
     local BCFG
@@ -152,18 +154,6 @@ main ()
     local DF2
     local DU2
     local AVGSIZ
-
-    PLABEL="${PLABEL%%:*}"
-    PCFG="${PCFG%%:*}"
-
-    [ "${PLABEL}" == "" ] && exit 0
-    [ "${PCFG}"   == "" ] && exit 0
-
-    init-rf-backup
-
-    CFGS="${CFGDIR}/${PCFG}"
-
-    read-cfg "${CFGS}" || exit 0
 
     [ -z "${cfg_NAME}" ] && cfg_NAME="${PCFG}"
 
@@ -174,7 +164,7 @@ main ()
     if ! cond-mount "${PLABEL}" "${MNTBCKDIR}" "${CFGS}"
     then
         notify-users "RF backup" "`get-locale-msg 04 "${cfg_NAME}"`" "${PCFG}" critical
-        exit 0
+        return 1
     fi
 
     AVGSIZ=`get-backup-size "${cfg_SRCDIR}" "${PLABEL}"`
@@ -191,7 +181,7 @@ main ()
     if [ "$(($AVGSIZ * 2))" -gt "$DF1" ]
     then
         notify-users "RF backup" "`get-locale-msg 08 "${cfg_NAME}"`" "${PCFG}" critical
-        exit 0
+        return 1
     fi
 
     NEXTID=`echo 1 | awk '{ print strftime ("%Y%m%d.%H%M%S")}'`
@@ -199,7 +189,7 @@ main ()
     if ! make_backup "$NEXTID" "${cfg_SRCDIR}" "${MNTBCKDIR}/${cfg_DSTDIR}" "${CFGS}" "${cfg_NAME}" "${PLABEL}"
     then
         notify-users "RF backup" "`get-locale-msg 05 "${cfg_NAME}"`" "${PCFG}" critical
-        exit 0
+        return 1
     fi
 
     DF2=`get-df "${MNTBCKDIR}"`
@@ -207,7 +197,7 @@ main ()
     DU2="${DF2%% *}"
     DF2="${DF2#* }"
     write-log "DEBUG (DF/DU): [$DF2][$DU2][$(($DU2-$DU1))]"
-    add-backup-size "${cfg_SRCDIR}" "${PLABEL}" "$(($DU2-$DU1))"
+    add-backup-size "${cfg_SRCDIR}" "${PLABEL}" "$(($DU2-$DU1))" "$DF2"
 
     write-log "INFO (${PCFG}): Unmounting ${MNTBCKDIR}"
 
@@ -220,7 +210,40 @@ main ()
         notify-users "RF backup" "`get-locale-msg 07 "${cfg_NAME}"`" "${PCFG}" critical
     fi
 
-    exit 0
+    return 0
 }
+
+main ()
+{
+    local PLABEL="$1:"
+    local PCFG="${PLABEL#*:}"
+    local CFGS
+    local TLOG=`mktemp /tmp/rf-backup-XXXXXX`
+    local TNOTI=`mktemp /tmp/rf-backup-XXXXXX`
+
+    PLABEL="${PLABEL%%:*}"
+    PCFG="${PCFG%%:*}"
+
+    [ "${PLABEL}" == "" ] && return 0
+    [ "${PCFG}"   == "" ] && return 0
+
+    CFGS="${CFGDIR}/${PCFG}"
+
+    init-rf-backup
+
+    read-cfg "${CFGS}" || return 0
+
+    set-logoutput "${TLOG}" "${TNOTI}"
+
+    do-work "${PLABEL}" "${PCFG}" "${CFGS}"
+
+    if [ "${cfg_MAIL}" != "" ]
+    then
+        sendwait=1 HOME=/root MAILRC=/dev/null /usr/bin/mailx -s "`cat "${TNOTI}"`" rolf@rolffokkens.nl < "${TLOG}" > /tmp/weg.mailx 2>&1
+    fi
+
+    rm -f "${TLOG}" "${TNOTI}"
+}
+
 
 main "$1"

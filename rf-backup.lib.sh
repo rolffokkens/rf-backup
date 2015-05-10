@@ -3,6 +3,8 @@ MNTDIR=/mnt/rf-backup
 RUNDIR=/var/run/rf-backup
 LIBDIR=/var/lib/rf-backup
 LOGFILE=/var/log/rf-backup.log
+LOGOUTPUT=""
+NOTIOUTPUT=""
 
 read-locale ()
 {
@@ -133,17 +135,33 @@ check-cfg-single ()
     esac
 }
 
+set-logoutput ()
+{
+    LOGOUTPUT="$1"
+    NOTIOUTPUT="$2"
+}
+
+cond-logoutput ()
+{
+    if [ "${LOGOUTPUT}" == "" ]
+    then
+        cat
+    else
+        tee -a "${LOGOUTPUT}"
+    fi
+}
+
 write-log ()
 {
-    echo "$1" | awk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0; }' >> ${LOGFILE}
+    echo "$1" | cond-logoutput | awk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0; }' >> "${LOGFILE}"
 }
 
 notify-users ()
 {
-    local TITLE=$1
-    local MSG=$2
-    local BCFG=$3
-    local URG=$4
+    local TITLE="$1"
+    local MSG="$2"
+    local BCFG="$3"
+    local URG="$4"
     local USER
 
     [ "$URG" == "" ] && URG=normal
@@ -166,6 +184,8 @@ notify-users ()
       done
 
     wall "${TITLE}: ${MSG}" > /dev/null 2>&1
+
+    [ "$NOTIOUTPUT" == "" ] || echo "${TITLE}: ${MSG}" > "$NOTIOUTPUT"
 }
 
 action-and-log ()
@@ -232,6 +252,7 @@ add-backup-size ()
     local DIR="$1"
     local LABEL="$2"
     local SIZE="$3"
+    local FREE="$4"
     local STATS="${LIBDIR}/${LABEL}.stats"
     local TMP1=`mktemp "${LIBDIR}/${LABEL}-XXXXXX.stats"`
     local DT=`date +%s`
@@ -240,13 +261,15 @@ add-backup-size ()
 
     [ -e "$STATS" ] || touch "$STATS"
 
-    awk "-F|" -v "DIR=$DIR" -v "SIZE=$SIZE" -v "DT=$DT" '
+    awk "-F|" -v "DIR=$DIR" -v "SIZE=$SIZE" -v "DT=$DT" -v "FREE=$FREE" '
     BEGIN {
-        l    = 0;
-        size = SIZE;
+        l     = 0;
+        size  = SIZE;
+        mindt = DT - 365*24*60*60;
     }
     {
         if (NF != 3) next;
+        if ($3 < mindt) next;
         if ($1 != DIR) {
             print $0;
             next;
@@ -255,7 +278,7 @@ add-backup-size ()
         size      += $2;
     }
     END {
-        lines[l++]=DIR "|" SIZE "|" DT;
+        lines[l++]=DIR "|" SIZE "|" DT "|" FREE;
         i = l-5;
         if (i < 0) i = 0;
         while (i < l) print lines[i++];
