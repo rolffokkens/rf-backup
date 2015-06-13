@@ -67,7 +67,6 @@ main ()
       do
           BCK="$NAME"
           [ "$BCK" == "" ] && BCK="($CFG)"
-          echo $CFG $NAME $MSG $DAYS $MAIL
           SUBJECT=`get-locale-msg 09 "$BCK"`
           BODY=`get-locale-msg "$MSG" "$DAYS"`
           echo "$BODY" \
