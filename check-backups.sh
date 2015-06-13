@@ -49,26 +49,29 @@ main ()
     done \
     | awk "-F|" -v "DT=$DT" '{
           if (ARGIND == 1) {
+              if ($2 in dirs && $3 < dirs[$2]) next;
+
               dirs[$2]   = $3;
               labels[$2] = $1;
           } else {
               if (!($2 in dirs)) {
-                  print $1 "|" $4 "|11||" $5;
+                  print $1 "|" $4 "|11||" $5 "|";
                   next;
               }
               days = int ((DT - dirs[$2]) / (24 * 60 * 60))
 
               if (days < $3) next;
 
-              print $1 "|" $4 "|10|" days "|" $5;
+              print $1 "|" $4 "|10|" days "|" $5 "|" labels[$2];
           }
       }' "$TMP1" - \
-    | while IFS="|" read CFG NAME MSG DAYS MAIL
+    | while IFS="|" read CFG NAME MSG DAYS MAIL LABEL
       do
           BCK="$NAME"
           [ "$BCK" == "" ] && BCK="($CFG)"
+          #echo $CFG $NAME $MSG $DAYS $MAIL
           SUBJECT=`get-locale-msg 09 "$BCK"`
-          BODY=`get-locale-msg "$MSG" "$DAYS"`
+          BODY=`get-locale-msg "$MSG" "$DAYS" "$LABEL"`
           echo "$BODY" \
           | sendwait=1 HOME=/root MAILRC=/dev/null /usr/bin/mailx -s "${SUBJECT}" "$MAIL"
       done

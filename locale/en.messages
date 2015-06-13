@@ -7,5 +7,5 @@
 07=There was an error while finishing the backup '%s'.
 08=There is insufficient disk space to make backup '%s'.
 09=Backup '%s' needs to be made.
-10=Backup has not run for %s days.
+10=Backup was made %s days ago on disk '%s'.
 11=Backup has never been made.
