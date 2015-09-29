@@ -126,6 +126,7 @@ make_backup ()
               "\"$SRCPATH\"" "\"$DSTPATH/${NEXTID}\""
 
     RET=$?
+    [ "$RET" == "24" ] && RET=0
 
     rm "${TMPEXCL}"
 
