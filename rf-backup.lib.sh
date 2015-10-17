@@ -268,7 +268,7 @@ add-backup-size ()
         mindt = DT - 365*24*60*60;
     }
     {
-        if (NF != 3) next;
+        if (NF < 3) next;
         if ($3 < mindt) next;
         if ($1 != DIR) {
             print $0;
