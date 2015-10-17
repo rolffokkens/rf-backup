@@ -264,18 +264,14 @@ add-backup-size ()
     awk "-F|" -v "DIR=$DIR" -v "SIZE=$SIZE" -v "DT=$DT" -v "FREE=$FREE" '
     BEGIN {
         l     = 0;
-        size  = SIZE;
-        mindt = DT - 365*24*60*60;
     }
     {
         if (NF < 3) next;
-        if ($3 < mindt) next;
         if ($1 != DIR) {
             print $0;
             next;
         }
         lines[l++] = $0;
-        size      += $2;
     }
     END {
         lines[l++]=DIR "|" SIZE "|" DT "|" FREE;
