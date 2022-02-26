@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 . `dirname $0`/rf-backup.lib.sh
 
@@ -95,7 +95,7 @@ make_backup ()
         ;;
     esac
 
-    notify-users "RF backup" "`get-locale-msg 03 "${NAME}" "${LABEL}"`" "${BCFG}"
+    notify-users "RF backup" 03 "${BCFG}" "" "${NAME}" "${LABEL}"
 
     if [ "$LASTID" = "" ]
     then
@@ -164,7 +164,7 @@ do-work ()
 
     if ! cond-mount "${PLABEL}" "${MNTBCKDIR}" "${CFGS}"
     then
-        notify-users "RF backup" "`get-locale-msg 04 "${cfg_NAME}"`" "${PCFG}" critical
+        notify-users "RF backup" 04 "${PCFG}" "" "${cfg_NAME}"
         return 1
     fi
 
@@ -181,7 +181,7 @@ do-work ()
 
     if [ "$(($AVGSIZ * 2))" -gt "$DF1" ]
     then
-        notify-users "RF backup" "`get-locale-msg 08 "${cfg_NAME}"`" "${PCFG}" critical
+        notify-users "RF backup" 08 "${PCFG}" "critical" "${cfg_NAME}"
         return 1
     fi
 
@@ -189,7 +189,7 @@ do-work ()
 
     if ! make_backup "$NEXTID" "${cfg_SRCDIR}" "${MNTBCKDIR}/${cfg_DSTDIR}" "${CFGS}" "${cfg_NAME}" "${PLABEL}"
     then
-        notify-users "RF backup" "`get-locale-msg 05 "${cfg_NAME}"`" "${PCFG}" critical
+        notify-users "RF backup" 05 "${PCFG}" "critical" "${cfg_NAME}"
         return 1
     fi
 
@@ -205,10 +205,10 @@ do-work ()
     if action-and-log "${BCFG}" \
         umount "\"${MNTBCKDIR}\""
     then
-        notify-users "RF backup" "`get-locale-msg 06 "${cfg_NAME}" "${PLABEL}"`" "${PCFG}" critical
+        notify-users "RF backup" 06 "${PCFG}" "critical" "${cfg_NAME}" "${PLABEL}"
     else
         write-log "ERROR (${PCFG}): Error unmounting ${MNTBCKDIR}"
-        notify-users "RF backup" "`get-locale-msg 07 "${cfg_NAME}"`" "${PCFG}" critical
+        notify-users "RF backup" 07 "${PCFG}" "critical" "${cfg_NAME}"
     fi
 
     return 0

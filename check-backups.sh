@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 . `dirname $0`/rf-backup.lib.sh
 
@@ -42,7 +42,6 @@ main ()
 
         read-cfg "$i"
 
-        [ "$cfg_MAIL"      == "" ] && continue
         [ "$cfg_WARNAFTER" == "" ] && continue
 
         echo "`basename "$i"`|$cfg_SRCDIR|$cfg_WARNAFTER|$cfg_NAME|$cfg_MAIL"
@@ -70,10 +69,14 @@ main ()
           BCK="$NAME"
           [ "$BCK" == "" ] && BCK="($CFG)"
           #echo $CFG $NAME $MSG $DAYS $MAIL
-          SUBJECT=`get-locale-msg 09 "$BCK"`
-          BODY=`get-locale-msg "$MSG" "$DAYS" "$LABEL"`
-          echo "$BODY" \
-          | sendwait=1 HOME=/root MAILRC=/dev/null /usr/bin/mailx -s "${SUBJECT}" "$MAIL"
+          if [[ $MAIL != "" ]]
+          then
+              SUBJECT=`get-locale-msg 09 "$BCK"`
+              BODY=`get-locale-msg "$MSG" "$DAYS" "$LABEL"`
+              echo "$BODY" \
+              | sendwait=1 HOME=/root MAILRC=/dev/null /usr/bin/mailx -s "${SUBJECT}" "$MAIL"
+          fi
+          notify-users "RF backup" "$MSG" "${CFG}" "critical" "$DAYS" "$LABEL"
       done
 
     rm -f "$TMP1"

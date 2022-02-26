@@ -2,45 +2,50 @@ CFGDIR=/etc/rf-backup.d/
 MNTDIR=/mnt/rf-backup
 RUNDIR=/var/run/rf-backup
 LIBDIR=/var/lib/rf-backup
+RFHOME=/usr/share/rf-backup
 LOGFILE=/var/log/rf-backup.log
 LOGOUTPUT=""
 NOTIOUTPUT=""
 
-read-locale ()
+_read_locale ()
 {
-    local LNG
-    local LOCDIR="${RFBCKDIR}/locale"
+    local _lng="$1"
+    local LOCDIR="${RFHOME}/locale"
 
-    LNG="${LANG}."
-    LNG="${LNG%%.*}"
+    [[ ${_lng} == "" ]] && _lng="${LANG}."
 
-    [ -e "${LOCDIR}/${LNG}.messages" ] || LNG="${LNG%%_*}"
-    [ -e "${LOCDIR}/${LNG}.messages" ] || LNG=en
+    _lng="${_lng%%.*}"
+
+    [ -e "${LOCDIR}/${_lng}.messages" ] || _lng="${_lng%%_*}"
+    [ -e "${LOCDIR}/${_lng}.messages" ] || _lng=en
 
     unset rf_locale
 
     declare -gA rf_locale
 
-    eval $(sed -n 's/"/\\\"/g;s/\(^[^#][^#= ]\+\)\([=]\)\([^ ].*$\)/rf_locale["\1"]="\3"/p' "${LOCDIR}/${LNG}.messages")
+    eval $(sed -n 's/"/\\\"/g;s/\(^[^#][^#= ]\+\)\([=]\)\([^ ].*$\)/rf_locale["\1"]="\3"/p' "${LOCDIR}/${_lng}.messages")
 }
 
 init-rf-backup ()
 {
-    declare -g RFBCKDIR=`dirname "$0"`
-
     declare -g LANG
-    [ -z "$LANG" ] && [ -e /etc/locale.conf ] && . /etc/locale.conf
 
-    read-locale
+    [ -z "$LANG" ] && [ -e /etc/locale.conf ] && . /etc/locale.conf
 }
 
 get-locale-msg ()
 {
-    local MSGTXT="${rf_locale[$1]}"
+    local _lang="$1"
+    local _msgid="$2"
+    local _msgtxt
 
-    shift
+    _read_locale "${_lang}"
 
-    printf "$MSGTXT" "$@"
+    _msgtxt="${rf_locale[${_msgid}]}"
+
+    shift 2
+
+    printf "${_msgtxt}" "$@"
 }
 
 get-cfgs ()
@@ -158,34 +163,39 @@ write-log ()
 
 notify-users ()
 {
-    local TITLE="$1"
-    local MSG="$2"
-    local BCFG="$3"
-    local URG="$4"
-    local USER
+    local _title="$1"
+    local _msgid="$2"
+    local _bcfg="$3"
+    local _urg="$4"
+    shift 4
 
-    [ "$URG" == "" ] && URG=normal
+    local _user
+    local _msgtxt
 
-    write-log "USER (${BCFG}): ${TITLE}: ${MSG}"
+    [[ ${_urg} == "" ]] && _urg=critical
 
-    for pid in `pgrep dbus-daemon`
-    do
-        USER="`stat -c"%U" "/proc/${pid}"`"
-        unset prc_DISPLAY prc_DBUS_SESSION_BUS_ADDRESS
-        eval $(grep -z -e DISPLAY= -e DBUS_SESSION_BUS_ADDRESS= /proc/$pid/environ | sed 's/\o00/\n/' | sed 's|^|prc_|')
-        [ "$prc_DISPLAY"                  == "" ] && continue
-        [ "$prc_DBUS_SESSION_BUS_ADDRESS" == "" ] && continue
-        echo "${USER}|${prc_DBUS_SESSION_BUS_ADDRESS}"
-    done \
-    | sort -u \
-    | while IFS="|" read USER prc_DBUS_SESSION_BUS_ADDRESS
+    for i in /proc/[0-9]*/environ; do grep -q DISPLAY $i 2>/dev/null && echo $i; done \
+    | while read _env
       do
-          su - "$USER" -c "DBUS_SESSION_BUS_ADDRESS=$prc_DBUS_SESSION_BUS_ADDRESS /bin/notify-send -i \"${BCKIMG}\" \"${TITLE}\" \"${MSG}\" -u ${URG}"
+          _user=$(stat -c"%U" "${_env}" 2>/dev/null) || continue
+          unset _prc_DISPLAY _prc_DBUS_SESSION_BUS_ADDRESS _prc_LANG
+          eval $(grep -z -e DISPLAY= -e DBUS_SESSION_BUS_ADDRESS= -e LANG= "${_env}" | tr '\0' '\n' | sed 's|^|_prc_|')
+          [[ "$_prc_DISPLAY"                  == "" ]] && continue
+          [[ "$_prc_DBUS_SESSION_BUS_ADDRESS" == "" ]] && continue
+          [[ "$_prc_LANG"                     == "" ]] && continue
+          echo "${_user}|${_prc_DBUS_SESSION_BUS_ADDRESS}|${_prc_LANG}"
+      done \
+    | sort -u \
+    | while IFS="|" read _user _prc_DBUS_SESSION_BUS_ADDRESS _prc_LANG
+      do
+          _msgtxt=$(get-locale-msg "${_prc_LANG}" "${_msgid}" "$@")
+          su - "${_user}" -c "DBUS_SESSION_BUS_ADDRESS=${_prc_DBUS_SESSION_BUS_ADDRESS} LANG=${_prc_LANG} /bin/notify-send -i \"${BCKIMG}\" \"${_title}\" \"${_msgtxt}\" -u ${_urg}" >&2
+          write-log "USER (${_bcfg},${_user},${_prc_DBUS_SESSION_BUS_ADDRESS},${_prc_LANG}): ${_title}: ${_msgtxt}"
       done
 
-    wall "${TITLE}: ${MSG}" > /dev/null 2>&1
+    wall "TB-laptop issue ${_code}: ${_msg}" > /dev/null 2>&1
 
-    [ "$NOTIOUTPUT" == "" ] || echo "${TITLE}: ${MSG}" > "$NOTIOUTPUT"
+    [[ "$NOTIOUTPUT" == "" ]] || echo "${_code}: ${_msg}" > "$NOTIOUTPUT"
 }
 
 action-and-log ()
