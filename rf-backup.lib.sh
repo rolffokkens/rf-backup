@@ -193,9 +193,9 @@ notify-users ()
           write-log "USER (${_bcfg},${_user},${_prc_DBUS_SESSION_BUS_ADDRESS},${_prc_LANG}): ${_title}: ${_msgtxt}"
       done
 
-    wall "TB-laptop issue ${_code}: ${_msg}" > /dev/null 2>&1
-
-    [[ "$NOTIOUTPUT" == "" ]] || echo "${_code}: ${_msg}" > "$NOTIOUTPUT"
+    _msgtxt=$(get-locale-msg "en" "${_msgid}" "$@")
+    [[ "$NOTIOUTPUT" == "" ]] || echo "${_title}/${_msgid}: ${_msgtxt}" > "$NOTIOUTPUT"
+    wall "RF-backup issue: ${_msgtxt}" > /dev/null 2>&1
 }
 
 action-and-log ()
