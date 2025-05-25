@@ -161,6 +161,15 @@ write-log ()
     echo "$1" | cond-logoutput | awk '{ print strftime("%Y-%m-%d %H:%M:%S"), $0; }' >> "${LOGFILE}"
 }
 
+_wall ()
+{
+    readlink /proc/*/fd/0 | grep /dev/pts | sort | uniq \
+    | while read _pty
+      do
+          printf "\n%s\n\n" "$1" | unix2dos > "${_pty}"
+      done
+}
+
 notify-users ()
 {
     local _title="$1"
@@ -195,7 +204,7 @@ notify-users ()
 
     _msgtxt=$(get-locale-msg "en" "${_msgid}" "$@")
     [[ "$NOTIOUTPUT" == "" ]] || echo "${_title}/${_msgid}: ${_msgtxt}" > "$NOTIOUTPUT"
-    wall "RF-backup issue: ${_msgtxt}" > /dev/null 2>&1
+    _wall "RF-backup issue: ${_msgtxt}" > /dev/null 2>&1
 }
 
 action-and-log ()
